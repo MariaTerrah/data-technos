@@ -77,8 +77,8 @@ def _get_gmail_service():
 
 def _build_subject() -> str:
     """Build the email subject line with today's date."""
-    today = datetime.now(timezone.utc).strftime("%d %B %Y")
-    return f"{DIGEST_SUBJECT_PREFIX} {today}"
+    today = datetime.now(timezone.utc).strftime("%-d %B %Y")
+    return f"{DIGEST_SUBJECT_PREFIX} - {today}"
 
 
 def _create_message(recipient: str, subject: str, html: str, plain: str) -> dict:
@@ -105,7 +105,7 @@ def _send_message(service, message: dict) -> None:
 
 def _build_html(articles: list[dict]) -> str:
     """Build a clean HTML email body."""
-    today = datetime.now(timezone.utc).strftime("%d %B %Y")
+    today = datetime.now(timezone.utc).strftime("%-d %B %Y")
     rows = ""
     for a in articles:
         topics_html = "".join(
@@ -148,7 +148,7 @@ def _build_html(articles: list[dict]) -> str:
 
 def _build_plain(articles: list[dict]) -> str:
     """Build a plain text fallback email body."""
-    today = datetime.now(timezone.utc).strftime("%d %B %Y")
+    today = datetime.now(timezone.utc).strftime("%-d %B %Y")
     lines = [f"Daily Tech Watch — {today}", f"{len(articles)} articles\n", "="*60]
     for a in articles:
         lines += [
