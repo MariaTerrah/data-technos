@@ -1,6 +1,6 @@
 # Tech Watch
 
-An automated daily pipeline that searches the web for fresh Data & AI articles, scores them by relevance, stores them in Supabase, and sends you a formatted email digest.
+An automated daily pipeline that searches the web for fresh Data & AI articles, scores them by relevance, stores them in Supabase, and sends a formatted email digest.
 
 ## What It Does
 
@@ -76,15 +76,11 @@ You need a Google Cloud project with the Gmail API enabled.
 
 1. Go to [Google Cloud Console](https://console.cloud.google.com)
 2. Create a project → Enable **Gmail API**
-3. Create **OAuth 2.0 credentials** (Desktop app type)
+3. Create **OAuth 2.0 credentials** (Desktop app type) → download the JSON
 4. Add your Gmail address as a test user (OAuth consent screen → Audience)
-5. Run the one-time auth flow to get your refresh token:
+5. Run the one-time auth flow using the `google-auth-oauthlib` library to get a refresh token, or use the [Google OAuth Playground](https://developers.google.com/oauthplayground) with your credentials
 
-```bash
-python scripts/get_gmail_token.py
-```
-
-Copy the printed `refresh_token` into your `.env`.
+Copy the `refresh_token` into your `.env`.
 
 ### 5. Get API keys
 
