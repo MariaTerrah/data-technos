@@ -115,7 +115,7 @@ def _process_batch(client: genai.Client, batch: list[dict]) -> list[dict]:
     Retries once on 429 (rate limit) after the suggested retry delay.
     """
     prompt = _build_prompt(batch)
-    for attempt in range(2):
+    for attempt in range(3):
         try:
             response = client.models.generate_content(
                 model=GEMINI_MODEL,
@@ -127,9 +127,15 @@ def _process_batch(client: genai.Client, batch: list[dict]) -> list[dict]:
             )
             break
         except Exception as e:
-            if attempt == 0 and "429" in str(e):
-                logger.warning("Rate limit hit — waiting 20s before retry")
-                time.sleep(20)
+            err = str(e)
+            if attempt < 2 and "429" in err:
+                wait = 20
+                logger.warning(f"Rate limit hit — waiting {wait}s before retry (attempt {attempt + 1})")
+                time.sleep(wait)
+            elif attempt < 2 and "503" in err:
+                wait = 30 * (attempt + 1)  # 30s, then 60s
+                logger.warning(f"Gemini overloaded (503) — waiting {wait}s before retry (attempt {attempt + 1})")
+                time.sleep(wait)
             else:
                 raise
     raw = response.text.strip()
@@ -172,16 +178,18 @@ Content: {article['content']}
 
     return f"""You are a tech news curator for a Data Engineer / Analytics Engineer working with:
 BigQuery, dbt, Apache Airflow, Google Cloud Platform, Fivetran, Looker, Python, SQL.
-They are also interested in: data analytics broadly, AI applied to data engineering,data analytics, LLMs, AI based skills and BI tools.
+They are also interested in: AI applied to data engineering, LLMs used in data workflows, and BI tools.
 
 For each article below, evaluate its relevance and return a JSON array.
 
 Scoring rules:
-- 9-10: Directly about their daily stack (dbt, BigQuery, Airflow, GCP, Fivetran, Looker) or AI applied to data
-- 7-8: Closely related field (data engineering practices, analytics engineering, LLMs, MLOps)
-- 5-6: Broadly interesting (data governance, BI trends, cloud data platforms)
-- 1-4: Not relevant (generic tech news, unrelated domains, marketing fluff)
-- Articles marked SNIPPET ONLY may have lower confidence scores — reflect that uncertainty
+- 9-10: Specific news or feature releases about their stack (dbt, BigQuery, Airflow, GCP, Fivetran, Looker), OR concrete technical content about AI applied to data engineering (e.g. LLMs writing SQL, AI agents in data pipelines, AI-assisted data quality)
+- 7-8: Concrete technical tutorials or comparisons on closely related tools (data engineering practices, analytics engineering, MLOps, BI tools), or specific AI x data use cases
+- 5-6: Specific but broader (data governance news, cloud platform updates, new open source data tools)
+- 1-4: Generic advice ("how to design a pipeline", "10 rules for data engineers"), opinion pieces, pure LLM theory unrelated to data, marketing content, listicles without concrete technical value
+- SNIPPET ONLY articles must be scored 1-4 regardless of topic — the full content is inaccessible (paywalled or blocked), so they are not useful to include
+
+Key distinction: prefer SPECIFIC and CONCRETE over GENERAL and VAGUE. A generic article about data pipeline design scores low even if the topic is relevant. A specific release note or concrete tutorial scores high.
 
 Return ONLY a valid JSON array, no explanation, no markdown. Format:
 [

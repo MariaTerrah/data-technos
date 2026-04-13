@@ -100,7 +100,8 @@ def _create_message(recipient: str, subject: str, html: str, plain: str) -> dict
 
 def _send_message(service, message: dict) -> None:
     """Send a message via the Gmail API."""
-    service.users().messages().send(userId="me", body=message).execute()
+    result = service.users().messages().send(userId="me", body=message).execute()
+    logger.info(f"Gmail API response: message id={result.get('id')}, threadId={result.get('threadId')}")
 
 
 def _build_html(articles: list[dict]) -> str:
